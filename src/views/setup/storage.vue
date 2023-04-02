@@ -1,4 +1,4 @@
-<!-- 
+<!--
 // +----------------------------------------------------------------------
 // | LightPicture [ 图床 ]
 // +----------------------------------------------------------------------
@@ -9,7 +9,7 @@
 // | Copyright © http://picture.h234.cn All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: Team <admin@osuu.net>
-// +---------------------------------------------------------------------- 
+// +----------------------------------------------------------------------
 -->
 <template>
   <div>
@@ -19,8 +19,8 @@
           <div class="card-head">存储桶</div>
           <div class="card-body">
             <div class="demo-spin-container" v-if="loading">
-                <Spin fix size="large"></Spin>
-              </div>
+              <Spin fix size="large"></Spin>
+            </div>
             <Row :gutter="24" v-else>
               <Col :xxl="6" :xl="8" :lg="12" :md="12" :sm="24" :xs="24" class="ivu-mb" v-if="userInfo.role.is_admin == 1">
               <Card class="list-goods-list-item">
@@ -36,12 +36,12 @@
                   <div class="name">
                     {{ item.name }}
                     <Tag color="green" style="float: right">{{
-                        getName(item.type)
-                      }}</Tag>
+                      getName(item.type)
+                    }}</Tag>
                   </div>
                   <div class="explain">
-                    <Tag color="default">图片数量：{{ item.imgCount}}</Tag><br />
-                    <Tag color="default">占用存储：{{ turnSize(item.imgSize)}}</Tag>
+                    <Tag color="default">图片数量：{{ item.imgCount }}</Tag><br />
+                    <Tag color="default">占用存储：{{ turnSize(item.imgSize) }}</Tag>
                   </div>
                 </div>
                 <div class="btn-main" v-if="userInfo.role.is_admin == 1">
@@ -65,7 +65,7 @@
       <Form ref="create" :model="createData" :label-width="130">
         <FormItem label="存储源">
           <Select v-model="createData.type" style="width: 200px" placeholder="请选择存储源" :disabled="edit">
-            <Option v-for="(val, key,index) in sourceList" :value="key" :key="index">{{ val }}</Option>
+            <Option v-for="(val, key, index) in sourceList" :value="key" :key="index">{{ val }}</Option>
           </Select>
           <p style="font-size:12px;color:red" v-show="!edit">
             * 添加成功后存储源不可修改
@@ -74,7 +74,7 @@
         <FormItem label="桶名称">
           <Input v-model="createData.name" placeholder="请输入自定义名称" />
         </FormItem>
-        <FormItem label="空间域名" v-show="createData.type != 'local'">
+        <FormItem label="空间域名">
           <Input v-model="createData.space_domain" placeholder="请输入空间域名" />
         </FormItem>
 
@@ -113,299 +113,297 @@
 </template>
 
 <script>
-  import {
-    getStorage,
-    postStorage,
-    putStorage,
-    delStorage,
-    getStorageType
-  } from "@/api/index";
-  import {
-    toSize
-  } from "@/utils/index"
-  import {
-    mapState
-  } from "vuex";
-  export default {
-    data() {
-      return {
-        showCreate: false,
-        showDel: false,
-        creating: true,
-        loading: true,
-        modal_loading: false,
-        edit: false,
-        createData: {},
-        sourceList: {},
-        data: [],
-        page: 1,
-        size: 10,
-        total: "",
-        delId: "",
+import {
+  getStorage,
+  postStorage,
+  putStorage,
+  delStorage,
+  getStorageType
+} from "@/api/index";
+import {
+  toSize
+} from "@/utils/index"
+import {
+  mapState
+} from "vuex";
+export default {
+  data() {
+    return {
+      showCreate: false,
+      showDel: false,
+      creating: true,
+      loading: true,
+      modal_loading: false,
+      edit: false,
+      createData: {},
+      sourceList: {},
+      data: [],
+      page: 1,
+      size: 10,
+      total: "",
+      delId: "",
+    };
+  },
+  computed: {
+    ...mapState(["userInfo"]),
+    getLabel() {
+      return (value) => {
+        if (value == "AccessKey") {
+          if (this.createData.type == "oss") {
+            return "AccessKey ID";
+          }
+          if (this.createData.type == "cos") {
+            return "secretId";
+          }
+          if (this.createData.type == "kodo") {
+            return "AccessKey";
+          }
+        } else {
+          if (this.createData.type == "oss") {
+            return "AccessKey Secret";
+          }
+          if (this.createData.type == "cos") {
+            return "secretKey";
+          }
+          if (this.createData.type == "kodo") {
+            return "SecretKey";
+          }
+        }
       };
     },
-    computed: {
-      ...mapState(["userInfo"]),
-      getLabel() {
-        return (value) => {
-          if (value == "AccessKey") {
-            if (this.createData.type == "oss") {
-              return "AccessKey ID";
-            }
-            if (this.createData.type == "cos") {
-              return "secretId";
-            }
-            if (this.createData.type == "kodo") {
-              return "AccessKey";
-            }
-          } else {
-            if (this.createData.type == "oss") {
-              return "AccessKey Secret";
-            }
-            if (this.createData.type == "cos") {
-              return "secretKey";
-            }
-            if (this.createData.type == "kodo") {
-              return "SecretKey";
-            }
-          }
-        };
-      },
-      turnSize() {
-        return (val) => {
-          return toSize(val)
-        };
-      },
-      getName() {
-        return (value) => {
-          for (let key in this.sourceList) {
-            if (value == key) {
-              return this.sourceList[key]
-            }
-          }
-        };
-      },
+    turnSize() {
+      return (val) => {
+        return toSize(val)
+      };
     },
-    created() {
-      this._getData();
-      this._getStorageType();
-    },
-
-    methods: {
-      del(id) {
-        this.delId = id;
-        this.showDel = true;
-      },
-      // 删除方法
-      delFunction() {
-        this.modal_loading = true
-        delStorage({
-          id: this.delId,
-        }).then((res) => {
-          if (res.code == 200) {
-            this.$Message.success({
-              background: true,
-              content: res.msg,
-            });
-            this._getData();
-          } else {
-            this.$Message.error({
-              background: true,
-              content: res.msg,
-            });
+    getName() {
+      return (value) => {
+        for (let key in this.sourceList) {
+          if (value == key) {
+            return this.sourceList[key]
           }
-          this.modal_loading = false
-          this.showDel = false
-        });
-      },
-      //  新增按钮
-      addClick() {
-        this.edit = false;
-        this.showCreate = true;
-        this.createData = {
-          name: "",
-          type: "local",
-          space_domain: "",
-          AccessKey: "",
-          SecretKey: "",
-          region: "",
-          bucket: "",
-        };
-      },
-      // 获取列表
-      _getData() {
-        this.loading = true
-        getStorage({
-          page: this.page,
-          size: this.size,
-        }).then((res) => {
-          this.loading = false
-          this.data = res.data.data;
-          this.total = res.data.total;
-        });
-      },
-      _getStorageType() {
-        getStorageType().then((res) => {
-          this.sourceList = res.data
-        });
-      },
+        }
+      };
+    },
+  },
+  created() {
+    this._getData();
+    this._getStorageType();
+  },
 
-      // 新增
-      addSave() {
-        if (!this.createData.name) {
-          this.nextTick()
-          return this.$Message.error({
+  methods: {
+    del(id) {
+      this.delId = id;
+      this.showDel = true;
+    },
+    // 删除方法
+    delFunction() {
+      this.modal_loading = true
+      delStorage({
+        id: this.delId,
+      }).then((res) => {
+        if (res.code == 200) {
+          this.$Message.success({
             background: true,
-            content: "名称不能为空",
+            content: res.msg,
+          });
+          this._getData();
+        } else {
+          this.$Message.error({
+            background: true,
+            content: res.msg,
           });
         }
-        postStorage({
-          name: this.createData.name,
-          type: this.createData.type,
-          space_domain: this.createData.space_domain,
-          AccessKey: this.createData.AccessKey,
-          SecretKey: this.createData.SecretKey,
-          region: this.createData.region,
-          bucket: this.createData.bucket,
-        }).then((res) => {
-          if (res.code == 200) {
-            this.$Message.success({
-              background: true,
-              content: res.msg,
-            });
-            this.showCreate = false;
-            this._getData();
-          } else {
-            this.$Message.error({
-              background: true,
-              content: res.msg,
-            });
-          }
-          this.nextTick()
-        });
-      },
+        this.modal_loading = false
+        this.showDel = false
+      });
+    },
+    //  新增按钮
+    addClick() {
+      this.edit = false;
+      this.showCreate = true;
+      this.createData = {
+        name: "",
+        type: "local",
+        space_domain: "",
+        AccessKey: "",
+        SecretKey: "",
+        region: "",
+        bucket: "",
+      };
+    },
+    // 获取列表
+    _getData() {
+      this.loading = true
+      getStorage({
+        page: this.page,
+        size: this.size,
+      }).then((res) => {
+        this.loading = false
+        this.data = res.data.data;
+        this.total = res.data.total;
+      });
+    },
+    _getStorageType() {
+      getStorageType().then((res) => {
+        this.sourceList = res.data
+      });
+    },
 
-      //  编辑按钮
-      editClick(row) {
-        this.edit = true;
-        this.showCreate = true;
-        this.createData = {
-          ...row,
-        };
-      },
-      // 编辑
-      editSave() {
-        if (!this.createData.name) {
-          this.nextTick()
-          return this.$Message.error({
-            background: true,
-            content: "名称不能为空",
-          });
-        }
-        putStorage({
-          id: this.createData.id,
-          name: this.createData.name,
-          type: this.createData.type,
-          space_domain: this.createData.space_domain,
-          AccessKey: this.createData.AccessKey,
-          SecretKey: this.createData.SecretKey,
-          region: this.createData.region,
-          bucket: this.createData.bucket,
-        }).then((res) => {
-          if (res.code == 200) {
-            this.$Message.success({
-              background: true,
-              content: res.msg,
-            });
-            this.showCreate = false;
-            this._getData();
-          } else {
-            this.$Message.error({
-              background: true,
-              content: res.msg,
-            });
-          }
-          this.nextTick()
-        });
-      },
-
-      // 分页跳转
-      pageChange(val) {
-        this.page = val;
-        this._getData();
-      },
-      pageSizeChange(val) {
-        this.page = 1;
-        this.size = val;
-        this._getData();
-      },
-      nextTick() {
-        this.creating = false;
-        this.$nextTick(() => {
-          this.creating = true;
+    // 新增
+    addSave() {
+      if (!this.createData.name) {
+        this.nextTick()
+        return this.$Message.error({
+          background: true,
+          content: "名称不能为空",
         });
       }
+      postStorage({
+        name: this.createData.name,
+        type: this.createData.type,
+        space_domain: this.createData.space_domain,
+        AccessKey: this.createData.AccessKey,
+        SecretKey: this.createData.SecretKey,
+        region: this.createData.region,
+        bucket: this.createData.bucket,
+      }).then((res) => {
+        if (res.code == 200) {
+          this.$Message.success({
+            background: true,
+            content: res.msg,
+          });
+          this.showCreate = false;
+          this._getData();
+        } else {
+          this.$Message.error({
+            background: true,
+            content: res.msg,
+          });
+        }
+        this.nextTick()
+      });
     },
-  };
+
+    //  编辑按钮
+    editClick(row) {
+      this.edit = true;
+      this.showCreate = true;
+      this.createData = {
+        ...row,
+      };
+    },
+    // 编辑
+    editSave() {
+      if (!this.createData.name) {
+        this.nextTick()
+        return this.$Message.error({
+          background: true,
+          content: "名称不能为空",
+        });
+      }
+      putStorage({
+        id: this.createData.id,
+        name: this.createData.name,
+        type: this.createData.type,
+        space_domain: this.createData.space_domain,
+        AccessKey: this.createData.AccessKey,
+        SecretKey: this.createData.SecretKey,
+        region: this.createData.region,
+        bucket: this.createData.bucket,
+      }).then((res) => {
+        if (res.code == 200) {
+          this.$Message.success({
+            background: true,
+            content: res.msg,
+          });
+          this.showCreate = false;
+          this._getData();
+        } else {
+          this.$Message.error({
+            background: true,
+            content: res.msg,
+          });
+        }
+        this.nextTick()
+      });
+    },
+
+    // 分页跳转
+    pageChange(val) {
+      this.page = val;
+      this._getData();
+    },
+    pageSizeChange(val) {
+      this.page = 1;
+      this.size = val;
+      this._getData();
+    },
+    nextTick() {
+      this.creating = false;
+      this.$nextTick(() => {
+        this.creating = true;
+      });
+    }
+  },
+};
 </script>
 
 <style lang="less" scoped>
-  .list-goods-list-item {
-    margin-bottom: 20px;
-    // height: 156px;
+.list-goods-list-item {
+  margin-bottom: 20px;
+  // height: 156px;
 
-    .main {
-      line-height: 151px;
+  .main {
+    line-height: 151px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .main:hover {
+    color: #2d8cf0;
+    background: rgba(25, 129, 243, 0.07);
+  }
+
+  .name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #000000;
+  }
+
+  .btn-main {
+    border-top: 1px solid #e5e9f3;
+
+    .btn {
+      width: 50%;
+      float: left;
       text-align: center;
+      padding: 10px;
       cursor: pointer;
+      position: relative;
     }
 
-    .main:hover {
-      color: #2d8cf0;
-      background: rgba(25, 129, 243, 0.07);
-    }
-
-    .name {
-      font-size: 16px;
-      font-weight: 600;
-      color: #000000;
-    }
-
-    .btn-main {
-      border-top: 1px solid #e5e9f3;
-
-      .btn {
-        width: 50%;
-        float: left;
-        text-align: center;
-        padding: 10px;
-        cursor: pointer;
-        position: relative;
-      }
-
-      .btn:hover {
-        color: red;
-      }
-    }
-
-    .btn-main .btn:first-child {
-      border-right: 1px solid #e5e9f3;
-    }
-
-    .btn-main .btn:first-child:hover {
-      color: #2d8cf0;
-    }
-
-    .explain {
-      font-size: 14px;
-      color: #000000;
-      margin-top: 5px;
-    }
-
-    /deep/.ivu-card-body {
-      padding: 0 !important;
+    .btn:hover {
+      color: red;
     }
   }
 
- 
+  .btn-main .btn:first-child {
+    border-right: 1px solid #e5e9f3;
+  }
+
+  .btn-main .btn:first-child:hover {
+    color: #2d8cf0;
+  }
+
+  .explain {
+    font-size: 14px;
+    color: #000000;
+    margin-top: 5px;
+  }
+
+  /deep/.ivu-card-body {
+    padding: 0 !important;
+  }
+}
 </style>
