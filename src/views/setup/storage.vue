@@ -88,7 +88,7 @@
         <FormItem label="所属地域" v-show="createData.type == 'cos' || createData.type == 'oss'">
           <Input v-model="createData.region" placeholder="请输入所属地域" />
         </FormItem>
-        <FormItem label="空间名称" v-show="createData.type != 'local'">
+        <FormItem label="空间名称">
           <Input v-model="createData.bucket" placeholder="请输入空间名称 bucket" />
         </FormItem>
 
